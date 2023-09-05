@@ -2,6 +2,7 @@ package com.example.operationz;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -12,42 +13,84 @@ import android.view.SurfaceHolder;
 
 public class DrawThread  extends Thread{
     private SurfaceHolder surfaceHolder;
-    private volatile boolean running = true; //флаг для остановки потока
+    public volatile boolean running = true; //флаг для остановки потока
     private Paint backgroundPaint = new Paint();
-    private Bitmap soldier1;
-    private Bitmap soldier2;
-    private Bitmap soldier3;
-    private Bitmap soldier4;
+    //переменные
+    public int towardPointX;
+    public int towardPointY;
+
+    private Bitmap soldierUp;
+    private Bitmap soldierUpS;
+
+    private Bitmap soldierRight;
+    private Bitmap soldierRightS;
+
+    private Bitmap soldierBottom;
+    private Bitmap soldierBottomS;
+
+    private Bitmap soldierLeft;
+    private Bitmap soldierLeftS;
+
     private Bitmap block;
-    private Bitmap bitmap1;
-    private Bitmap bitmap2;
-    private Bitmap bitmap3;
-    private Bitmap bitmap4;
-    private Bitmap bitmap5;
-    private Bitmap bitmap6;
-    private Bitmap enemyBitmap;
-    Hero hero = new Hero();
-    Enemy enemy = new Enemy();
+    private Bitmap blockS;
+
+    private Bitmap LeftExit;
+    private Bitmap LeftExitS;
+
+    private Bitmap RightExit;
+    private Bitmap RightExitS;
+
+    private Bitmap mine;
+    private Bitmap mineS;
+
+    private Bitmap turel1;
+    private Bitmap turel1S;
+
+    private Bitmap turel2;
+    private Bitmap turel2S;
+
+    private Bitmap turel3;
+    private Bitmap turel3S;
+
+    private Bitmap turel4;
+    private Bitmap turel4S;
+
+    private Bitmap wonBitmap;
+    private Bitmap wonBitmapS;
+
+    private Bitmap diedBitmap;
+    private Bitmap diedBitmapS;
+
+    private Bitmap doc;
+    private Bitmap docS;
+
+    private int currentRoom;
+
+    private int[][] room1;
+    private int[][] room2;
+    private int[][] room3;
+
+    private boolean haveDoc = false;
+    private boolean haveNoDoc = true;
+
+    public int mode;
+    Context context;
+
     Crosspiece crosspiece;
-    private int towardPointX;
-    private int towardPointY;
-    int direction;
-    int directionTest;
 
-    int enemyDirection = 1;
+    Hero hero;
+    int heroX = 0;
+    int heroY = 0;
+    int heroBitmapDirection = 2;
+    int direction = 0;
 
-    int levelNum;
-    DBHelper dbHelper;
+    SharedPreferences level;
+    String APP_PREFERENCES;
+    String APP_PREFERENCES_ROOM1;
+    String APP_PREFERENCES_ROOM2;
+    String APP_PREFERENCES_ROOM3;
 
-    int[][] room1;
-    int[][] room2;
-    int[][] currentRoom;
-
-
-    int g = 1;
-
-
-
+    //переменные
     {
         backgroundPaint.setColor(Color.GRAY);
         backgroundPaint.setStyle(Paint.Style.FILL);
@@ -56,144 +99,537 @@ public class DrawThread  extends Thread{
         towardPointX = x;
         towardPointY = y;
     }
-    public DrawThread(Context context, SurfaceHolder surfaceHolder, int levelNum, DBHelper dbHelper) {
-        this.dbHelper = dbHelper;
-        this.levelNum = levelNum;
+    //конструктор
+    public DrawThread(Context context, SurfaceHolder surfaceHolder, int currentRoom, int[][] room1, int[][] room2, int[][] room3, int mode, SharedPreferences level, String APP_PREFERENCES, String APP_PREFERENCES_ROOM1, String APP_PREFERENCES_ROOM2, String APP_PREFERENCES_ROOM3) {
+        this.currentRoom = currentRoom;
         this.surfaceHolder = surfaceHolder;
-        bitmap1 = BitmapFactory.decodeResource(context.getResources(), R.drawable.soldier1);
-        bitmap2 = BitmapFactory.decodeResource(context.getResources(), R.drawable.soldier2);
-        bitmap3 = BitmapFactory.decodeResource(context.getResources(), R.drawable.soldier3);
-        bitmap4 = BitmapFactory.decodeResource(context.getResources(), R.drawable.soldier4);
-        bitmap5 = BitmapFactory.decodeResource(context.getResources(), R.drawable.block);
-        bitmap6 = BitmapFactory.decodeResource(context.getResources(), R.drawable.enemy);
+        this.room1 = room1;
+        this.room2 = room2;
+        this.room3 = room3;
+        this.mode = mode;
+        this.level = level;
+        this.APP_PREFERENCES = APP_PREFERENCES;
+        this.APP_PREFERENCES_ROOM1 = APP_PREFERENCES_ROOM1;
+        this.APP_PREFERENCES_ROOM2 = APP_PREFERENCES_ROOM2;
+        this.APP_PREFERENCES_ROOM3 = APP_PREFERENCES_ROOM3;
+
+        this.context = context;
+
+        soldierUpS = BitmapFactory.decodeResource(context.getResources(), R.drawable.soldier1);
+        soldierRightS = BitmapFactory.decodeResource(context.getResources(), R.drawable.soldier2);
+        soldierBottomS = BitmapFactory.decodeResource(context.getResources(), R.drawable.soldier3);
+        soldierLeftS = BitmapFactory.decodeResource(context.getResources(), R.drawable.soldier4);
+        blockS = BitmapFactory.decodeResource(context.getResources(), R.drawable.block);
+        RightExitS = BitmapFactory.decodeResource(context.getResources(), R.drawable.rightexit);
+        LeftExitS = BitmapFactory.decodeResource(context.getResources(), R.drawable.leftexit);
+        mineS = BitmapFactory.decodeResource(context.getResources(), R.drawable.mine);
+        turel1S = BitmapFactory.decodeResource(context.getResources(), R.drawable.turel1);
+        turel2S = BitmapFactory.decodeResource(context.getResources(), R.drawable.turel2);
+        turel3S = BitmapFactory.decodeResource(context.getResources(), R.drawable.turel3);
+        turel4S = BitmapFactory.decodeResource(context.getResources(), R.drawable.turel4);
+        wonBitmapS = BitmapFactory.decodeResource(context.getResources(), R.drawable.won);
+        diedBitmapS = BitmapFactory.decodeResource(context.getResources(), R.drawable.died);
+        docS = BitmapFactory.decodeResource(context.getResources(), R.drawable.doc);
 
     }
+    //конструктор
     public void requestStop() {
         running = false;
     }
 
-
     @Override
     public void run() {
+        Canvas canvas;
         while (running) {
-            Canvas canvas = surfaceHolder.lockCanvas();
+            canvas = surfaceHolder.lockCanvas();
             if (canvas != null) {
                 try {
                     int blockHeight = canvas.getHeight()/10;
                     int blockWidth = canvas.getWidth()/22;
 
-//                    int[][] room1 = dbHelper.getRoom1();
-//                    int[][] room2 = dbHelper.getRoom2();
-
-                    Room room = new Room(blockHeight, blockWidth);
-
-
-
                     Paint paint = new Paint();
-                    paint.setColor(Color.RED);
                     // рисование на canvas
-                    room1 = new int[10][22];
-                    for (int i = 0; i < 10; i++) {
-                        for (int j = 0; j < 22; j++) {
-                            room1[i][j] = 0;
-                        }
-                    }
-                    for (int i = 0; i < 10; i++) {
-                            room1[i][11] = 1;
-                    }
-                    room1[5][5]=1;
-                    room1[4][11] = 0;
-                    room1[5][11] = 0;
-                    room1[6][11] = 0;
+                    canvas.drawRGB(223, 223, 223);
+                    level = context.getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE);
 
-                    room2 = new int[10][22];
-                    for (int i = 0; i < 10; i++) {
-                        for (int j = 0; j < 22; j++) {
-                            room2[i][j] = 0;
-                        }
-                    }
 
-                    canvas.drawRGB(255, 255, 255);
 
-                    if (levelNum == 1 || levelNum == 3) {
-                        if(g==1)currentRoom = room1;
-                        else currentRoom = room2;
-                        block = Bitmap.createScaledBitmap(bitmap5, canvas.getWidth() / 22, canvas.getHeight() / 10, false);
-                        for (int i = 0; i < 10; i++) {
-                            for (int j = 0; j < 22; j++) {
-                                if (currentRoom[i][j] != 0) {
-                                    int[] blockCoordinates = room.getBlockCoordinates(i, j);
-                                    canvas.drawBitmap(block, blockCoordinates[0], blockCoordinates[1], backgroundPaint);
+
+
+                    //mode play
+                    if(mode==1) {
+                        block = Bitmap.createScaledBitmap(blockS, blockWidth, blockHeight, false);
+                        soldierUp = Bitmap.createScaledBitmap(soldierUpS, blockWidth, blockHeight, false);
+                        soldierRight = Bitmap.createScaledBitmap(soldierRightS, blockWidth, blockHeight, false);
+                        soldierBottom = Bitmap.createScaledBitmap(soldierBottomS, blockWidth, blockHeight, false);
+                        soldierLeft = Bitmap.createScaledBitmap(soldierLeftS, blockWidth, blockHeight, false);
+                        RightExit = Bitmap.createScaledBitmap(RightExitS, blockWidth, blockHeight, false);
+                        LeftExit = Bitmap.createScaledBitmap(LeftExitS, blockWidth, blockHeight, false);
+                        mine = Bitmap.createScaledBitmap(mineS, blockWidth, blockHeight, false);
+                        turel1 = Bitmap.createScaledBitmap(turel1S, blockWidth, blockHeight, false);
+                        turel2 = Bitmap.createScaledBitmap(turel2S, blockWidth, blockHeight, false);
+                        turel3 = Bitmap.createScaledBitmap(turel3S, blockWidth, blockHeight, false);
+                        turel4 = Bitmap.createScaledBitmap(turel4S, blockWidth, blockHeight, false);
+                        wonBitmap = Bitmap.createScaledBitmap(wonBitmapS, canvas.getWidth(), canvas.getHeight(), false);
+                        diedBitmap = Bitmap.createScaledBitmap(diedBitmapS, canvas.getWidth(), canvas.getHeight(), false);
+                        doc = Bitmap.createScaledBitmap(docS, blockWidth, blockHeight, false);
+
+
+                        //room1play
+                        if (currentRoom == 1) {
+                            for (int i = 0; i < 10; i++) {
+                                for (int j = 0; j < 22; j++) {
+                                    if (room1[i][j] == 1) canvas.drawBitmap(block, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room1[i][j] == 2) canvas.drawBitmap(LeftExit, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room1[i][j] == 3) canvas.drawBitmap(RightExit, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room1[i][j] == 4) canvas.drawBitmap(mine, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room1[i][j] == 5) canvas.drawBitmap(turel1, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room1[i][j] == 6) canvas.drawBitmap(turel2, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room1[i][j] == 7) canvas.drawBitmap(turel3, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room1[i][j] == 8) canvas.drawBitmap(turel4, blockWidth * j, blockHeight * i, backgroundPaint);
                                 }
                             }
                         }
+                        //room1play
 
 
+                        //room2play
+                        else if (currentRoom == 2) {
+                            for (int i = 0; i < 10; i++) {
+                                for (int j = 0; j < 22; j++) {
+                                    if (room2[i][j] == 1) canvas.drawBitmap(block, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room2[i][j] == 3) canvas.drawBitmap(RightExit, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room2[i][j] == 2) canvas.drawBitmap(LeftExit, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room2[i][j] == 4) canvas.drawBitmap(mine, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room2[i][j] == 5) canvas.drawBitmap(turel1, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room2[i][j] == 6) canvas.drawBitmap(turel2, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room2[i][j] == 7) canvas.drawBitmap(turel3, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room2[i][j] == 8) canvas.drawBitmap(turel4, blockWidth * j, blockHeight * i, backgroundPaint);
 
+                                }
+                            }
+                        }
+                        //room2play
+
+
+                        //room3play
+                        else if (currentRoom == 3) {
+                            for (int i = 0; i < 10; i++) {
+                                for (int j = 0; j < 22; j++) {
+                                    if (room3[i][j] == 1) canvas.drawBitmap(block, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room3[i][j] == 2) canvas.drawBitmap(LeftExit, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room3[i][j] == 3&&haveNoDoc) canvas.drawBitmap(doc, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room3[i][j] == 4) canvas.drawBitmap(mine, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room3[i][j] == 5) canvas.drawBitmap(turel1, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room3[i][j] == 6) canvas.drawBitmap(turel2, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room3[i][j] == 7) canvas.drawBitmap(turel3, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room3[i][j] == 8) canvas.drawBitmap(turel4, blockWidth * j, blockHeight * i, backgroundPaint);
+                                }
+                            }
+                        }
+                        //room3play
+
+                        hero = new Hero(blockHeight, blockWidth, room1, room2, room3, heroX, heroY, heroBitmapDirection);
                         crosspiece = new Crosspiece(canvas.getHeight(), canvas.getWidth());
                         direction = crosspiece.getDirection(towardPointX, towardPointY);
-                        if (direction != 0) directionTest = direction;
+                        if (direction != 0) heroBitmapDirection = direction;
 
-                            hero.go(direction, blockHeight, blockWidth, room1);
-                            soldier1 = Bitmap.createScaledBitmap(bitmap1, canvas.getWidth() / 22, canvas.getHeight() / 10, false);
-                            soldier2 = Bitmap.createScaledBitmap(bitmap2, canvas.getWidth() / 22, canvas.getHeight() / 10, false);
-                            soldier3 = Bitmap.createScaledBitmap(bitmap3, canvas.getWidth() / 22, canvas.getHeight() / 10, false);
-                            soldier4 = Bitmap.createScaledBitmap(bitmap4, canvas.getWidth() / 22, canvas.getHeight() / 10, false);
+                        if (heroBitmapDirection == 1)
+                            canvas.drawBitmap(soldierUp, heroX, heroY, backgroundPaint);
+                        else if (heroBitmapDirection == 2)
+                            canvas.drawBitmap(soldierRight, heroX, heroY, backgroundPaint);
+                        else if (heroBitmapDirection == 3)
+                            canvas.drawBitmap(soldierBottom, heroX, heroY, backgroundPaint);
+                        else if (heroBitmapDirection == 4)
+                            canvas.drawBitmap(soldierLeft, heroX, heroY, backgroundPaint);
 
+                        int aim = hero.getAim(direction, currentRoom);
 
-                        enemyBitmap = Bitmap.createScaledBitmap(bitmap6, canvas.getWidth() / 22, canvas.getHeight() / 10, false);
-
-                    enemy.go(blockHeight, blockWidth, room1, hero.x, hero.y);
-                    hero.hp = enemy.heroHP;
-
-                    if (enemy.hp!=0) {
-                        canvas.drawBitmap(enemyBitmap, enemy.x, enemy.y, backgroundPaint);
-                    }
-                        if (hero.hp!=0) {
-                            if (directionTest == 1)
-                                canvas.drawBitmap(soldier1, hero.x, hero.y, backgroundPaint);
-                            else if (directionTest == 2)
-                                canvas.drawBitmap(soldier2, hero.x, hero.y, backgroundPaint);
-                            else if (directionTest == 3)
-                                canvas.drawBitmap(soldier3, hero.x, hero.y, backgroundPaint);
-                            else if (directionTest == 4)
-                                canvas.drawBitmap(soldier4, hero.x, hero.y, backgroundPaint);
-                            else canvas.drawBitmap(soldier2, hero.x, hero.y, backgroundPaint);
-
+                        if(aim == -2){
+                            currentRoom--;
+                            heroX = blockWidth*21;
+                            heroY = blockHeight*9;
                         }
-                    }
-
-                    else {
-                        block = Bitmap.createScaledBitmap(bitmap5, canvas.getWidth() / 22, canvas.getHeight() / 10, false);
-                        for (int i = 0; i < 10; i++) {
-                            for (int j = 0; j < 22; j++) {
-                                if(room1[i][j] != 0){
-                                    int[] blockCoordinates = room.getBlockCoordinates(i, j);
-                                    canvas.drawBitmap(block, blockCoordinates[0], blockCoordinates[1], backgroundPaint);
-                                }
+                        else if(aim == -3){
+                            currentRoom++;
+                            heroX = 0;
+                            heroY = 0;
+                        }
+                        else if (direction == 1 && aim>=0) {
+                            while (aim != heroY) {
+                                heroY--;
+                                canvas.drawBitmap(soldierUp, heroX, heroY, backgroundPaint);
                             }
                         }
+                        else if (direction == 2 && aim>=0) {
+                            while (aim != heroX) {
+                                heroX++;
+                                canvas.drawBitmap(soldierRight, heroX, heroY, backgroundPaint);
+                            }
+                        }
+                        else if(direction==3 && aim>=0) {
+                            while (aim != heroY) {
+                                heroY++;
+                                canvas.drawBitmap(soldierBottom, heroX, heroY, backgroundPaint);
+                            }
+                        }
+                        else if(direction==4 && aim>=0) {
+                            while (aim != heroX) {
+                                heroX--;
+                                canvas.drawBitmap(soldierLeft, heroX, heroY, backgroundPaint);
+                            }
+                        }
+                        else if(aim == -4){
+                            canvas.drawBitmap(diedBitmap, 0, 0, backgroundPaint);
+                        }
+                        else if(aim == -5 && haveNoDoc){
+                            haveDoc=true;
+                            haveNoDoc=false;
 
+                            //canvas.drawBitmap(wonBitmap, 0, 0, backgroundPaint);
+                        }
+                        else if(aim == -6&& haveDoc){
 
-                        int blockTowardPointX = towardPointX/blockWidth+1;
-                        int blockTowardPointY = towardPointY/blockHeight+1;
-                        if (room1[blockTowardPointY][blockTowardPointX] == 0) room1[blockTowardPointY][blockTowardPointX] = 1;
-//                        dbHelper.Delete();
-//                        dbHelper.Add(room1, room2);
+                            canvas.drawBitmap(wonBitmap, 0, 0, backgroundPaint);
+                        }
                     }
+                    //mode play
+
+
+
+
+
+
+                    //mode edit
+                    else {
+                        block = Bitmap.createScaledBitmap(blockS, blockWidth, blockHeight, false);
+                        RightExit = Bitmap.createScaledBitmap(RightExitS, blockWidth, blockHeight, false);
+                        LeftExit = Bitmap.createScaledBitmap(LeftExitS, blockWidth, blockHeight, false);
+                        mine = Bitmap.createScaledBitmap(mineS, blockWidth, blockHeight, false);
+                        turel1 = Bitmap.createScaledBitmap(turel1S, blockWidth, blockHeight, false);
+                        turel2 = Bitmap.createScaledBitmap(turel2S, blockWidth, blockHeight, false);
+                        turel3 = Bitmap.createScaledBitmap(turel3S, blockWidth, blockHeight, false);
+                        turel4 = Bitmap.createScaledBitmap(turel4S, blockWidth, blockHeight, false);
+                        //room1Edit
+                        if(currentRoom == 1){
+                            for (int i = 0; i < 10; i++) {
+                                for (int j = 0; j < 22; j++) {
+                                    if (room1[i][j] == 1) canvas.drawBitmap(block, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room1[i][j] == 3) canvas.drawBitmap(RightExit, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room1[i][j] == 4) canvas.drawBitmap(mine, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room1[i][j] == 5) canvas.drawBitmap(turel1, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room1[i][j] == 6) canvas.drawBitmap(turel2, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room1[i][j] == 7) canvas.drawBitmap(turel3, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room1[i][j] == 8) canvas.drawBitmap(turel4, blockWidth * j, blockHeight * i, backgroundPaint);
+                                }
+                            }
+
+                            if(towardPointX>=0 && towardPointY>=0){
+                                int j = towardPointX/blockWidth;
+                                int i = towardPointY/blockHeight;
+                                if(room1[i][j] == 0){
+                                    room1[i][j] = 1;
+                                    try {
+                                        Thread.sleep(200);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                //mine
+                                else if(room1[i][j] == 1){
+                                    room1[i][j] = 4;
+                                    try {
+                                        Thread.sleep(200);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                // turel1
+                                else if(room1[i][j] == 4){
+                                    room1[i][j] = 0;
+                                    try {
+                                        Thread.sleep(200);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                // turel2
+                                else if(room1[i][j] == 5){
+                                    room1[i][j] = 6;
+                                    try {
+                                        Thread.sleep(200);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                // turel3
+                                else if(room1[i][j] == 6){
+                                    room1[i][j] = 7;
+                                    try {
+                                        Thread.sleep(200);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                // turel4
+                                else if(room1[i][j] == 7){
+                                    room1[i][j] = 8;
+                                    try {
+                                        Thread.sleep(200);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+
+                                // to 0
+                                else if(room1[i][j] == 8){
+                                    room1[i][j] = 0;
+                                    try {
+                                        Thread.sleep(200);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+
+
+
+                                //exites
+                                else if(room1[i][j]==3){
+                                    currentRoom = 2;
+                                    try {
+                                        Thread.sleep(200);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }
+
+                        }
+                        //room1Edit
+
+                        //room2Edit
+                        else if(currentRoom == 2){
+                            for (int i = 0; i < 10; i++) {
+                                for (int j = 0; j < 22; j++) {
+                                    if (room2[i][j] == 1) canvas.drawBitmap(block, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room2[i][j] == 3) canvas.drawBitmap(RightExit, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room2[i][j] == 2) canvas.drawBitmap(LeftExit, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room2[i][j] == 4) canvas.drawBitmap(mine, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room2[i][j] == 5) canvas.drawBitmap(turel1, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room2[i][j] == 6) canvas.drawBitmap(turel2, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room2[i][j] == 7) canvas.drawBitmap(turel3, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room2[i][j] == 8) canvas.drawBitmap(turel4, blockWidth * j, blockHeight * i, backgroundPaint);
+                                }
+                            }
+
+                            if(towardPointX>=0 && towardPointY>=0){
+                                int j = towardPointX/blockWidth;
+                                int i = towardPointY/blockHeight;
+                                if(room2[i][j] == 0){
+                                    room2[i][j] = 1;
+                                    try {
+                                        Thread.sleep(200);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+
+                                //mine
+                                else if(room2[i][j] == 1){
+                                    room2[i][j] = 4;
+                                    try {
+                                        Thread.sleep(200);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                // turel1
+                                else if(room2[i][j] == 4){
+                                    room2[i][j] = 0;
+                                    try {
+                                        Thread.sleep(200);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                // turel2
+                                else if(room2[i][j] == 5){
+                                    room2[i][j] = 6;
+                                    try {
+                                        Thread.sleep(200);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                // turel3
+                                else if(room2[i][j] == 6){
+                                    room2[i][j] = 7;
+                                    try {
+                                        Thread.sleep(200);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                // turel4
+                                else if(room2[i][j] == 7){
+                                    room2[i][j] = 8;
+                                    try {
+                                        Thread.sleep(200);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+
+                                // to 0
+                                else if(room2[i][j] == 8){
+                                    room2[i][j] = 0;
+                                    try {
+                                        Thread.sleep(200);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+
+
+
+                                //exites
+                                else if(room2[i][j]==2){
+                                    currentRoom = 1;
+                                    try {
+                                        Thread.sleep(200);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+
+                                else if(room2[i][j]==3){
+                                    currentRoom = 3;
+                                    try {
+                                        Thread.sleep(200);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }
+
+                        }
+                        //room2Edit
+
+                        //room3Edit
+                        else if(currentRoom == 3){
+                            for (int i = 0; i < 10; i++) {
+                                for (int j = 0; j < 22; j++) {
+                                    if (room3[i][j] == 1) canvas.drawBitmap(block, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room3[i][j] == 2) canvas.drawBitmap(LeftExit, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room3[i][j] == 3) canvas.drawBitmap(RightExit, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room3[i][j] == 4) canvas.drawBitmap(mine, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room3[i][j] == 5) canvas.drawBitmap(turel1, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room3[i][j] == 6) canvas.drawBitmap(turel2, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room3[i][j] == 7) canvas.drawBitmap(turel3, blockWidth * j, blockHeight * i, backgroundPaint);
+                                    else if (room3[i][j] == 8) canvas.drawBitmap(turel4, blockWidth * j, blockHeight * i, backgroundPaint);
+                                }
+                            }
+
+                            if(towardPointX>=0 && towardPointY>=0){
+                                int j = towardPointX/blockWidth;
+                                int i = towardPointY/blockHeight;
+                                if(room3[i][j] == 0){
+                                    room3[i][j] = 1;
+                                    try {
+                                        Thread.sleep(200);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+
+                                //mine
+                                else if(room3[i][j] == 1){
+                                    room3[i][j] = 4;
+                                    try {
+                                        Thread.sleep(200);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                // turel1
+                                else if(room3[i][j] == 4){
+                                    room3[i][j] = 0;
+                                    try {
+                                        Thread.sleep(200);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                // turel2
+                                else if(room3[i][j] == 5){
+                                    room3[i][j] = 6;
+                                    try {
+                                        Thread.sleep(200);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                // turel3
+                                else if(room3[i][j] == 6){
+                                    room3[i][j] = 7;
+                                    try {
+                                        Thread.sleep(200);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                // turel4
+                                else if(room3[i][j] == 7){
+                                    room3[i][j] = 8;
+                                    try {
+                                        Thread.sleep(200);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+
+                                // to 0
+                                else if(room3[i][j] == 8){
+                                    room3[i][j] = 0;
+                                    try {
+                                        Thread.sleep(200);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+
+
+
+                                //exites
+                                else if(room3[i][j]==2){
+                                    currentRoom = 2;
+                                    try {
+                                        Thread.sleep(200);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+
+                            }
+
+                        }
+                        //room3Edit
+
+                    }
+                    //mode edit
+
+
+
+
 
                     // рисование на canvas
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
                 } finally {
                     surfaceHolder.unlockCanvasAndPost(canvas);
                 }
-
-
-
-
-
             }
         }
     }
+
+
+
 }

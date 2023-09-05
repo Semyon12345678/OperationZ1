@@ -14,105 +14,48 @@ import com.example.operationz.R;
 
 public class MainActivity extends AppCompatActivity {
 
-    Button btnLevel1, btnLevel2;
-    Button btnLevel1Ed, btnLevel2Ed;
-    Button btnClean;
-    DBHelper dbHelper;
-//
-//    DBHelper dbHelper;
-
+    Button btnStart, btnEdit;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-//        getSupportActionBar().hide();
-//        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-//        setContentView(new GameView(this));
-
-//        getSupportActionBar().hide();
-//        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        setContentView(R.layout.activity_main);
         getSupportActionBar().hide();
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-        setContentView(R.layout.activity_main);
+        btnStart = findViewById(R.id.btnStart);
+        btnEdit = findViewById(R.id.btnEdit);
 
-
-//        dbHelper = new DBHelper(this);
-
-//        int[][] room1 = new int[10][22];
-//        int[][] room2 = new int[10][22];
-//        for (int i = 0; i < 10; i++) {
-//            for (int j = 0; j < 22; j++) {
-//                room1[i][j] = 0;
-//                room2[i][j] = 0;
-//            }
-//        }
-//
-//        dbHelper.Add(room1, room2);
-
-//
-
-
-//        dbHelper = new DBHelper(this);
-//        SQLiteDatabase database = dbHelper.getWritableDatabase();
-//        ContentValues contentValues = new ContentValues();
-
-        btnLevel1 = findViewById(R.id.btnLevel1);
-        btnLevel2 = findViewById(R.id.btnLevel2);
-        btnLevel1Ed = findViewById(R.id.btnLevel1Ed);
-        btnLevel2Ed = findViewById(R.id.btnLevel2Ed);
-        btnClean = findViewById(R.id.btnClean);
-
-
-
-
-
-        btnLevel1.setOnClickListener(new View.OnClickListener() {
+        btnEdit.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                String levelNum = "1";
+            public void onClick(View view) {
+                String mode = "2";
                 Intent intent = new Intent(MainActivity.this, LevelActivity.class);
-                intent.putExtra("room", levelNum);
+                intent.putExtra("mode", mode);
                 startActivity(intent);
             }
         });
 
-        btnLevel1Ed.setOnClickListener(new View.OnClickListener() {
+        btnStart.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                String levelNum = "2";
+            public void onClick(View view) {
+                String mode = "1";
                 Intent intent = new Intent(MainActivity.this, LevelActivity.class);
-                intent.putExtra("room", levelNum);
+                intent.putExtra("mode", mode);
                 startActivity(intent);
             }
         });
-
-
-        btnClean.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String levelNum = "3";
-                Intent intent = new Intent(MainActivity.this, LevelActivity.class);
-                intent.putExtra("room", levelNum);
-                startActivity(intent);
-            }
-        });
-
-
-
-        btnLevel2.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-            }
-        });
-
-        btnLevel2Ed.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-            }
-        });
-
-
     }
+//    @Override
+//    protected void onDestroy() {
+//        super.onDestroy();
+//        level = getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE);
+//        SharedPreferences.Editor editor = level.edit();
+//
+//        String strRoom1 = ed1.getText().toString();
+//        String strRoom2 = ed2.getText().toString();
+//
+//        editor.putString(APP_PREFERENCES_ROOM1, strRoom1);
+//        editor.putString(APP_PREFERENCES_ROOM2, strRoom2);
+//        editor.apply();
+//    }
 }

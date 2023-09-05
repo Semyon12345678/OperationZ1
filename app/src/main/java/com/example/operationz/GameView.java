@@ -5,6 +5,7 @@ import static android.view.MotionEvent.ACTION_DOWN;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -17,18 +18,30 @@ import androidx.annotation.NonNull;
 
 public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private DrawThread drawThread;
+    public int[][] room1;
+    public int[][] room2;
+    public int[][] room3;
+    public int mode;
+    public int currentRoom = 1;
+    SharedPreferences level;
+    String APP_PREFERENCES;
+    String APP_PREFERENCES_ROOM1;
+    String APP_PREFERENCES_ROOM2;
+    String APP_PREFERENCES_ROOM3;
 
-    int levelNum;
-    DBHelper dbHelper;
-
-    public GameView(Context context, int levelNum, DBHelper dbHelper) {
+    public GameView(Context context , int[][] room1, int[][] room2, int[][] room3, int mode, SharedPreferences level, String APP_PREFERENCES, String APP_PREFERENCES_ROOM1, String APP_PREFERENCES_ROOM2, String APP_PREFERENCES_ROOM3) {
         super(context);
         getHolder().addCallback(this);
-        this.levelNum = levelNum;
-        this.dbHelper = dbHelper;
+        this.room1 = room1;
+        this.room2 = room2;
+        this.room3 = room3;
+        this.mode = mode;
+        this.level = level;
+        this.APP_PREFERENCES = APP_PREFERENCES;
+        this.APP_PREFERENCES_ROOM1 = APP_PREFERENCES_ROOM1;
+        this.APP_PREFERENCES_ROOM2 = APP_PREFERENCES_ROOM2;
+        this.APP_PREFERENCES_ROOM3 = APP_PREFERENCES_ROOM3;
     }
-
-
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -41,7 +54,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                 return true;
 
             case MotionEvent.ACTION_UP: // отпускание
-                drawThread.setTowardPoint(0,0);
+                drawThread.setTowardPoint(-2,-2);
                 return true;
 
             case MotionEvent.ACTION_CANCEL:
@@ -51,20 +64,18 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         return false;
     }
 
-//https://startandroid.ru/ru/uroki/vse-uroki-spiskom/168-urok-103-multitouch-obrabotka-mnozhestvennyh-kasanij.html
-//и предыдущий урок
-
-
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         // создание SurfaceView
-        drawThread = new DrawThread(getContext(),getHolder(), levelNum, dbHelper);
+        drawThread = new DrawThread(getContext(), getHolder(), currentRoom, room1, room2, room3, mode, level, APP_PREFERENCES, APP_PREFERENCES_ROOM1, APP_PREFERENCES_ROOM2, APP_PREFERENCES_ROOM3);
         drawThread.start();
     }
+
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         // изменение размеров SurfaceView
     }
+
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         // уничтожение SurfaceView
@@ -78,25 +89,4 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             }
         }
     }
-
-
-//    public GameView(Context context) {
-//        super(context);
-//    }
-//    private int viewWidth;
-//    private int viewHeight;
-//    @Override
-//    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-//        super.onSizeChanged(w, h, oldw, oldh);
-//        viewWidth = w;
-//        viewHeight = h;
-//    }
-//
-//    @Override
-//    protected void onDraw(Canvas canvas) {
-//        super.onDraw(canvas);
-//        canvas.drawARGB(250, 0, 0, 0);
-//        Paint p = new Paint();
-//
-//    }
 }
